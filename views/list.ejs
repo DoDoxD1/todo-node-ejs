@@ -7,15 +7,22 @@
     <link rel="stylesheet" href="css/styles.css">
   </head>
   <body>
-    <h1><%= data %></h1>
-    <ul>
-        <% for(let i=0; i <items.length; i++){ %>
-          <li><%= items[i] %> </li>
-        <% } %>
-    </ul>
-    <form action="/" method="POST">
-      <label for="todo" />Add Item <input type="text" name="todo" />
-      <button type="submit">Add</button>
-    </form>
+
+    <div class="box" id="heading">
+      <h1><%= title %></h1>
+    </div>
+
+    <div class="box">
+      <% for(let i=0; i <items.length; i++){ %>
+      <div class="item">
+            <input type="checkbox">
+            <p><%= items[i] %> </p>
+          </div> 
+          <% } %>
+        <form action="/" method="POST" class="item">
+          <input type="text" name="todo" placeholder="New Item" />
+          <button type="submit" name="list" value=<%= title %>>+</button>
+        </form>
+    </div>
   </body>
 </html>
