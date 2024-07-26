@@ -6,10 +6,12 @@
 
     <div class="box">
       <% for(let i=0; i <items.length; i++){ %>
-      <div class="item">
+        <form action="/" method="POST">
+          <div class="item">
             <input type="checkbox">
-            <p><%= items[i] %> </p>
+            <p><%= items[i].name %> </p>
           </div> 
+        </form>
           <% } %>
         <form action="/" method="POST" class="item">
           <input type="text" name="todo" placeholder="New Item" />

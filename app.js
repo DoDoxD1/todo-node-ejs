@@ -1,5 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
 const date = require(__dirname + "/date.js");
 const app = express();
 const PORT = 3000;
@@ -8,22 +9,54 @@ app.set("view engine", "ejs");
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: true }));
 
-var items = [];
-var workItems = [];
+mongoose.connect("mongodb://localhost:27017/todolistDB");
 
-app.get("/", (req, res) => {
-  let day = date();
-  res.render("list", { title: day, items: items });
+const itemSchema = mongoose.Schema({
+  name: String,
 });
 
-app.post("/", (req, res) => {
+const Item = mongoose.model("Item", itemSchema);
+
+const item1 = new Item({
+  name: "Homework",
+});
+const item2 = new Item({
+  name: "Welcome",
+});
+const item3 = new Item({
+  name: "Movies",
+});
+
+const defaultItems = [item1, item2, item3];
+
+app.get("/", async (req, res) => {
+  const day = date();
+  let items = await Item.find();
+  if (items.length === 0) {
+    Item.create(defaultItems)
+      .then(function () {
+        console.log("Data inserted");
+        res.redirect("/");
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  } else {
+    res.render("list", { title: day, items: items });
+  }
+});
+
+app.post("/", async (req, res) => {
   var item = req.body.todo;
   if (item) {
     if (req.body.list == "Work") {
       workItems.push(item);
       res.redirect("/work");
     } else {
-      items.push(item);
+      const newItem = new Item({
+        name: item,
+      });
+      await newItem.save();
       res.redirect("/");
     }
   }
