@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const _ = require("lodash");
 const date = require(__dirname + "/date.js");
 const app = express();
 const PORT = 3000;
@@ -14,8 +15,13 @@ mongoose.connect("mongodb://localhost:27017/todolistDB");
 const itemSchema = mongoose.Schema({
   name: String,
 });
-
 const Item = mongoose.model("Item", itemSchema);
+
+const ListSchema = mongoose.Schema({
+  name: String,
+  items: [itemSchema],
+});
+const List = mongoose.model("List", ListSchema);
 
 const item1 = new Item({
   name: "Homework",
@@ -28,9 +34,10 @@ const item3 = new Item({
 });
 
 const defaultItems = [item1, item2, item3];
+let day = "";
 
 app.get("/", async (req, res) => {
-  const day = date();
+  day = date();
   let items = await Item.find();
   if (items.length === 0) {
     Item.create(defaultItems)
@@ -48,22 +55,55 @@ app.get("/", async (req, res) => {
 
 app.post("/", async (req, res) => {
   var item = req.body.todo;
+  const listName = req.body.list;
+
+  const newItem = new Item({
+    name: item,
+  });
+
   if (item) {
-    if (req.body.list == "Work") {
-      workItems.push(item);
-      res.redirect("/work");
-    } else {
-      const newItem = new Item({
-        name: item,
-      });
+    if (listName == day) {
       await newItem.save();
       res.redirect("/");
+    } else {
+      const result = await List.findOne({ name: listName });
+      result.items.push(newItem);
+      await result.save();
+      res.redirect("/" + listName);
     }
   }
 });
 
-app.get("/work", (req, res) => {
-  res.render("list", { title: "Work List", items: workItems });
+app.post("/delete", async (req, res) => {
+  const id = req.body.checkbox;
+  const listName = req.body.list;
+
+  if (listName == day) {
+    const result = await Item.deleteOne({ _id: id });
+    console.log("Deleted: ", id, result);
+    res.redirect("/");
+  } else {
+    const result = await List.findOne({ name: listName });
+    result.items.pull({ _id: id });
+    await result.save();
+    res.redirect("/" + listName);
+  }
+});
+
+app.get("/:ListName", async (req, res) => {
+  const listName = _.capitalize(req.params.ListName);
+  const result = await List.findOne({ name: listName }).exec();
+
+  if (!result) {
+    const list = new List({
+      name: listName,
+      items: defaultItems,
+    });
+    list.save();
+    res.redirect("/" + listName);
+  } else {
+    res.render("list", { title: listName, items: result.items });
+  }
 });
 
 app.get("/about", (req, res) => {
